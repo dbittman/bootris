@@ -36,17 +36,26 @@ world1: times 32 db 205
 start:
 	mov word [counter], 0
 	mov byte [timer_mod], 100
-	sti
 	call BiosClearScreen
 	mov ax, title
 	mov dh,0
 	mov dl,37
 	mov cx,6
 	call puts
-	
 	call draw_boarder
+	mov word [next_obj],block_L
+	
+	;start game
+	sti
 	hlt
 
+do_new_object:
+	mov word ax, [next_obj]
+	mov word [current_obj], ax
+	mov byte [obj_height],0
+	mov byte [offset],0
+	mov byte [rotation],0
+	ret
 
 draw_boarder:
 	mov dh, 1
@@ -90,6 +99,10 @@ puts:
 	popa
 	ret
 	
+do_game_tick:
+	call draw_boarder
+	ret
+
 keyboard_interrupt:
 	; save our registers!
 	pusha
@@ -108,6 +121,8 @@ timer_interrupt:
 	mov ax, [counter]
 	or ax, ax
 	jnz .end
+	; we hit zero! Do the game tick...
+	call do_game_tick
 	mov word [counter], 10
 	mov cx, 1
 	mov ah, 0x0A
@@ -140,3 +155,8 @@ absolute 0x7e00
 counter: resw 1
 timer_mod: resb 1
 arena: times HEIGHT resw 1
+current_obj: resw 1
+next_obj: resw 1
+obj_height: resb 1
+offset: resb 1
+rotation: resb 1
